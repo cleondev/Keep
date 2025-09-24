@@ -12,5 +12,4 @@ public class User
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public ICollection<Note> Notes { get; set; } = new List<Note>();
-    public ICollection<Label> Labels { get; set; } = new List<Label>();
 }

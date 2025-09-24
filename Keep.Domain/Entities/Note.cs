@@ -14,8 +14,6 @@ public class Note
     public bool IsDeleted { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-
-    public User? User { get; set; }
     public ICollection<Reminder> Reminders { get; set; } = new List<Reminder>();
     public ICollection<NoteLabel> Labels { get; set; } = new List<NoteLabel>();
     public ICollection<NoteCollaborator> Collaborators { get; set; } = new List<NoteCollaborator>();

@@ -22,8 +22,8 @@ public class NotesController : ControllerBase
         var notes = await _db.Notes
             .AsNoTracking()
             .Include(n => n.Reminders)
-            .Include(n => n.Labels).ThenInclude(nl => nl.Label)
-            .Include(n => n.Collaborators).ThenInclude(c => c.Collaborator)
+            .Include(n => n.Labels)
+            .Include(n => n.Collaborators)
             .ToListAsync();
 
         return Ok(notes);
@@ -35,8 +35,8 @@ public class NotesController : ControllerBase
         var note = await _db.Notes
             .AsNoTracking()
             .Include(n => n.Reminders)
-            .Include(n => n.Labels).ThenInclude(nl => nl.Label)
-            .Include(n => n.Collaborators).ThenInclude(c => c.Collaborator)
+            .Include(n => n.Labels)
+            .Include(n => n.Collaborators)
             .FirstOrDefaultAsync(n => n.Id == id);
 
         if (note is null)

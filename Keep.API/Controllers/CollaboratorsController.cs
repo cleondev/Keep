@@ -21,8 +21,6 @@ public class CollaboratorsController : ControllerBase
     {
         var collaborators = await _db.NoteCollaborators
             .AsNoTracking()
-            .Include(c => c.Collaborator)
-            .Include(c => c.Note)
             .ToListAsync();
 
         return Ok(collaborators);
@@ -33,8 +31,6 @@ public class CollaboratorsController : ControllerBase
     {
         var collaborator = await _db.NoteCollaborators
             .AsNoTracking()
-            .Include(c => c.Collaborator)
-            .Include(c => c.Note)
             .FirstOrDefaultAsync(c => c.NoteId == noteId && c.CollaboratorId == collaboratorId);
 
         if (collaborator is null)
