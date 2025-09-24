@@ -1,7 +1,6 @@
+using Keep.Application.Reminders;
 using Keep.Domain.Entities;
-using Keep.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Keep.API.Controllers;
 
@@ -9,30 +8,24 @@ namespace Keep.API.Controllers;
 [Route("api/[controller]")]
 public class RemindersController : ControllerBase
 {
-    private readonly KeepDbContext _db;
+    private readonly IReminderService _reminderService;
 
-    public RemindersController(KeepDbContext db)
+    public RemindersController(IReminderService reminderService)
     {
-        _db = db;
+        _reminderService = reminderService;
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Reminder>>> GetReminders()
+    public async Task<ActionResult<IEnumerable<Reminder>>> GetReminders(CancellationToken cancellationToken)
     {
-        var reminders = await _db.Reminders
-            .AsNoTracking()
-            .ToListAsync();
-
+        var reminders = await _reminderService.GetAllAsync(cancellationToken);
         return Ok(reminders);
     }
 
     [HttpGet("{id:guid}")]
-    public async Task<ActionResult<Reminder>> GetReminder(Guid id)
+    public async Task<ActionResult<Reminder>> GetReminder(Guid id, CancellationToken cancellationToken)
     {
-        var reminder = await _db.Reminders
-            .AsNoTracking()
-            .FirstOrDefaultAsync(r => r.Id == id);
-
+        var reminder = await _reminderService.GetByIdAsync(id, cancellationToken);
         if (reminder is null)
         {
             return NotFound();
@@ -42,48 +35,38 @@ public class RemindersController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<Reminder>> Create(Reminder reminder)
+    public async Task<ActionResult<Reminder>> Create(Reminder reminder, CancellationToken cancellationToken)
     {
-        reminder.Id = Guid.NewGuid();
-
-        _db.Reminders.Add(reminder);
-        await _db.SaveChangesAsync();
-
-        return CreatedAtAction(nameof(GetReminder), new { id = reminder.Id }, reminder);
+        var created = await _reminderService.CreateAsync(reminder, cancellationToken);
+        return CreatedAtAction(nameof(GetReminder), new { id = created.Id }, created);
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> Update(Guid id, Reminder updated)
+    public async Task<IActionResult> Update(Guid id, Reminder updated, CancellationToken cancellationToken)
     {
         if (id != updated.Id)
         {
             return BadRequest();
         }
 
-        var reminder = await _db.Reminders.FirstOrDefaultAsync(r => r.Id == id);
-        if (reminder is null)
+        var success = await _reminderService.UpdateAsync(updated, cancellationToken);
+        if (!success)
         {
             return NotFound();
         }
 
-        reminder.RemindAt = updated.RemindAt;
-        reminder.IsDone = updated.IsDone;
-
-        await _db.SaveChangesAsync();
         return NoContent();
     }
 
     [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        var reminder = await _db.Reminders.FirstOrDefaultAsync(r => r.Id == id);
-        if (reminder is null)
+        var success = await _reminderService.DeleteAsync(id, cancellationToken);
+        if (!success)
         {
             return NotFound();
         }
 
-        _db.Reminders.Remove(reminder);
-        await _db.SaveChangesAsync();
         return NoContent();
     }
 }

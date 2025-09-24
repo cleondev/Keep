@@ -1,7 +1,6 @@
+using Keep.Application.Labels;
 using Keep.Domain.Entities;
-using Keep.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Keep.API.Controllers;
 
@@ -9,32 +8,24 @@ namespace Keep.API.Controllers;
 [Route("api/[controller]")]
 public class LabelsController : ControllerBase
 {
-    private readonly KeepDbContext _db;
+    private readonly ILabelService _labelService;
 
-    public LabelsController(KeepDbContext db)
+    public LabelsController(ILabelService labelService)
     {
-        _db = db;
+        _labelService = labelService;
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Label>>> GetLabels()
+    public async Task<ActionResult<IEnumerable<Label>>> GetLabels(CancellationToken cancellationToken)
     {
-        var labels = await _db.Labels
-            .AsNoTracking()
-            .Include(l => l.Notes)
-            .ToListAsync();
-
+        var labels = await _labelService.GetAllAsync(cancellationToken);
         return Ok(labels);
     }
 
     [HttpGet("{id:guid}")]
-    public async Task<ActionResult<Label>> GetLabel(Guid id)
+    public async Task<ActionResult<Label>> GetLabel(Guid id, CancellationToken cancellationToken)
     {
-        var label = await _db.Labels
-            .AsNoTracking()
-            .Include(l => l.Notes)
-            .FirstOrDefaultAsync(l => l.Id == id);
-
+        var label = await _labelService.GetByIdAsync(id, cancellationToken);
         if (label is null)
         {
             return NotFound();
@@ -44,13 +35,9 @@ public class LabelsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<Label>> Create(Label label)
+    public async Task<ActionResult<Label>> Create(Label label, CancellationToken cancellationToken)
     {
-        label.Id = Guid.NewGuid();
-
-        _db.Labels.Add(label);
-        await _db.SaveChangesAsync();
-
-        return CreatedAtAction(nameof(GetLabel), new { id = label.Id }, label);
+        var created = await _labelService.CreateAsync(label, cancellationToken);
+        return CreatedAtAction(nameof(GetLabel), new { id = created.Id }, created);
     }
 }

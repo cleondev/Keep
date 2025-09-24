@@ -1,4 +1,14 @@
+using Keep.Application.Collaborators;
+using Keep.Application.Labels;
+using Keep.Application.Notes;
+using Keep.Application.Reminders;
+using Keep.Application.Users;
 using Keep.Infrastructure.Data;
+using Keep.Infrastructure.Services.Collaborators;
+using Keep.Infrastructure.Services.Labels;
+using Keep.Infrastructure.Services.Notes;
+using Keep.Infrastructure.Services.Reminders;
+using Keep.Infrastructure.Services.Users;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,6 +17,12 @@ var connectionString = builder.Configuration.GetConnectionString("Default") ?? "
 
 builder.Services.AddDbContext<KeepDbContext>(options =>
     options.UseSqlite(connectionString));
+
+builder.Services.AddScoped<INoteService, NoteService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ILabelService, LabelService>();
+builder.Services.AddScoped<IReminderService, ReminderService>();
+builder.Services.AddScoped<INoteCollaboratorService, NoteCollaboratorService>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

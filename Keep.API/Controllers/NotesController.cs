@@ -1,7 +1,6 @@
+using Keep.Application.Notes;
 using Keep.Domain.Entities;
-using Keep.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Keep.API.Controllers;
 
@@ -9,36 +8,24 @@ namespace Keep.API.Controllers;
 [Route("api/[controller]")]
 public class NotesController : ControllerBase
 {
-    private readonly KeepDbContext _db;
+    private readonly INoteService _noteService;
 
-    public NotesController(KeepDbContext db)
+    public NotesController(INoteService noteService)
     {
-        _db = db;
+        _noteService = noteService;
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Note>>> GetNotes()
+    public async Task<ActionResult<IEnumerable<Note>>> GetNotes(CancellationToken cancellationToken)
     {
-        var notes = await _db.Notes
-            .AsNoTracking()
-            .Include(n => n.Reminders)
-            .Include(n => n.Labels)
-            .Include(n => n.Collaborators)
-            .ToListAsync();
-
+        var notes = await _noteService.GetAllAsync(cancellationToken);
         return Ok(notes);
     }
 
     [HttpGet("{id:guid}")]
-    public async Task<ActionResult<Note>> GetNote(Guid id)
+    public async Task<ActionResult<Note>> GetNote(Guid id, CancellationToken cancellationToken)
     {
-        var note = await _db.Notes
-            .AsNoTracking()
-            .Include(n => n.Reminders)
-            .Include(n => n.Labels)
-            .Include(n => n.Collaborators)
-            .FirstOrDefaultAsync(n => n.Id == id);
-
+        var note = await _noteService.GetByIdAsync(id, cancellationToken);
         if (note is null)
         {
             return NotFound();
@@ -48,55 +35,38 @@ public class NotesController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<Note>> Create(Note note)
+    public async Task<ActionResult<Note>> Create(Note note, CancellationToken cancellationToken)
     {
-        note.Id = Guid.NewGuid();
-        note.CreatedAt = DateTime.UtcNow;
-        note.UpdatedAt = DateTime.UtcNow;
-
-        _db.Notes.Add(note);
-        await _db.SaveChangesAsync();
-
-        return CreatedAtAction(nameof(GetNote), new { id = note.Id }, note);
+        var created = await _noteService.CreateAsync(note, cancellationToken);
+        return CreatedAtAction(nameof(GetNote), new { id = created.Id }, created);
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> Update(Guid id, Note updated)
+    public async Task<IActionResult> Update(Guid id, Note updated, CancellationToken cancellationToken)
     {
         if (id != updated.Id)
         {
             return BadRequest();
         }
 
-        var note = await _db.Notes.FirstOrDefaultAsync(n => n.Id == id);
-        if (note is null)
+        var success = await _noteService.UpdateAsync(updated, cancellationToken);
+        if (!success)
         {
             return NotFound();
         }
 
-        note.Title = updated.Title;
-        note.Content = updated.Content;
-        note.IsPinned = updated.IsPinned;
-        note.IsArchived = updated.IsArchived;
-        note.IsDeleted = updated.IsDeleted;
-        note.UpdatedAt = DateTime.UtcNow;
-
-        await _db.SaveChangesAsync();
         return NoContent();
     }
 
     [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        var note = await _db.Notes.FirstOrDefaultAsync(n => n.Id == id);
-        if (note is null)
+        var success = await _noteService.SoftDeleteAsync(id, cancellationToken);
+        if (!success)
         {
             return NotFound();
         }
 
-        note.IsDeleted = true;
-        note.UpdatedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
         return NoContent();
     }
 }

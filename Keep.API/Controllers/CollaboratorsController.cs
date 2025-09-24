@@ -1,7 +1,6 @@
+using Keep.Application.Collaborators;
 using Keep.Domain.Entities;
-using Keep.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Keep.API.Controllers;
 
@@ -9,30 +8,24 @@ namespace Keep.API.Controllers;
 [Route("api/[controller]")]
 public class CollaboratorsController : ControllerBase
 {
-    private readonly KeepDbContext _db;
+    private readonly INoteCollaboratorService _collaboratorService;
 
-    public CollaboratorsController(KeepDbContext db)
+    public CollaboratorsController(INoteCollaboratorService collaboratorService)
     {
-        _db = db;
+        _collaboratorService = collaboratorService;
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<NoteCollaborator>>> GetCollaborators()
+    public async Task<ActionResult<IEnumerable<NoteCollaborator>>> GetCollaborators(CancellationToken cancellationToken)
     {
-        var collaborators = await _db.NoteCollaborators
-            .AsNoTracking()
-            .ToListAsync();
-
+        var collaborators = await _collaboratorService.GetAllAsync(cancellationToken);
         return Ok(collaborators);
     }
 
     [HttpGet("{noteId:guid}/{collaboratorId:guid}")]
-    public async Task<ActionResult<NoteCollaborator>> GetCollaborator(Guid noteId, Guid collaboratorId)
+    public async Task<ActionResult<NoteCollaborator>> GetCollaborator(Guid noteId, Guid collaboratorId, CancellationToken cancellationToken)
     {
-        var collaborator = await _db.NoteCollaborators
-            .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.NoteId == noteId && c.CollaboratorId == collaboratorId);
-
+        var collaborator = await _collaboratorService.GetByIdAsync(noteId, collaboratorId, cancellationToken);
         if (collaborator is null)
         {
             return NotFound();
@@ -42,35 +35,26 @@ public class CollaboratorsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<NoteCollaborator>> Create(NoteCollaborator collaborator)
+    public async Task<ActionResult<NoteCollaborator>> Create(NoteCollaborator collaborator, CancellationToken cancellationToken)
     {
-        var exists = await _db.NoteCollaborators
-            .AnyAsync(c => c.NoteId == collaborator.NoteId && c.CollaboratorId == collaborator.CollaboratorId);
-
-        if (exists)
+        var created = await _collaboratorService.AddAsync(collaborator, cancellationToken);
+        if (!created)
         {
             return Conflict("Collaborator already added to note.");
         }
-
-        _db.NoteCollaborators.Add(collaborator);
-        await _db.SaveChangesAsync();
 
         return CreatedAtAction(nameof(GetCollaborator), new { collaborator.NoteId, collaborator.CollaboratorId }, collaborator);
     }
 
     [HttpDelete("{noteId:guid}/{collaboratorId:guid}")]
-    public async Task<IActionResult> Delete(Guid noteId, Guid collaboratorId)
+    public async Task<IActionResult> Delete(Guid noteId, Guid collaboratorId, CancellationToken cancellationToken)
     {
-        var collaborator = await _db.NoteCollaborators
-            .FirstOrDefaultAsync(c => c.NoteId == noteId && c.CollaboratorId == collaboratorId);
-
-        if (collaborator is null)
+        var removed = await _collaboratorService.RemoveAsync(noteId, collaboratorId, cancellationToken);
+        if (!removed)
         {
             return NotFound();
         }
 
-        _db.NoteCollaborators.Remove(collaborator);
-        await _db.SaveChangesAsync();
         return NoContent();
     }
 }
