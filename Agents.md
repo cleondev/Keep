@@ -1,7 +1,7 @@
 # Agents.md
 
 ## 🎯 Mục tiêu
-Xây dựng ứng dụng **Google Keep Clone** với các tính năng cốt lõi: Ghi chú, Nhắc nhở, Cộng tác, Gắn nhãn.
+Xây dựng ứng dụng **Google Keep** với các tính năng cốt lõi: Ghi chú, Nhắc nhở, Cộng tác, Gắn nhãn.
 
 - **Kiến trúc**: Layered Architecture (.NET 9)
 - **Database**: SQLite
@@ -14,32 +14,32 @@ Xây dựng ứng dụng **Google Keep Clone** với các tính năng cốt lõi
 
 ### 1. Tạo cấu trúc dự án & cài đặt package
 ```bash
-dotnet new sln -n KeepClone
+dotnet new sln -n Keep
 
 # Tạo các layer
-cd KeepClone
-dotnet new classlib -n KeepClone.Domain
-dotnet new classlib -n KeepClone.Application
-dotnet new classlib -n KeepClone.Infrastructure
-dotnet new webapi   -n KeepClone.API
+cd Keep
+dotnet new classlib -n Keep.Domain
+dotnet new classlib -n Keep.Application
+dotnet new classlib -n Keep.Infrastructure
+dotnet new webapi   -n Keep.API
 
-dotnet sln add KeepClone.*
+dotnet sln add Keep.*
 
 # Thêm reference
-dotnet add KeepClone.Application reference KeepClone.Domain
-dotnet add KeepClone.Infrastructure reference KeepClone.Application KeepClone.Domain
-dotnet add KeepClone.API reference KeepClone.Application KeepClone.Infrastructure
+dotnet add Keep.Application reference Keep.Domain
+dotnet add Keep.Infrastructure reference Keep.Application Keep.Domain
+dotnet add Keep.API reference Keep.Application Keep.Infrastructure
 
 # EF Core SQLite
-dotnet add KeepClone.Infrastructure package Microsoft.EntityFrameworkCore
+dotnet add Keep.Infrastructure package Microsoft.EntityFrameworkCore
 
-dotnet add KeepClone.Infrastructure package Microsoft.EntityFrameworkCore.Sqlite
-dotnet add KeepClone.Infrastructure package Microsoft.EntityFrameworkCore.Design
+dotnet add Keep.Infrastructure package Microsoft.EntityFrameworkCore.Sqlite
+dotnet add Keep.Infrastructure package Microsoft.EntityFrameworkCore.Design
 ```
 
 ### 2. Entity & DbContext
 
-#### Entities (KeepClone.Domain/Entities)
+#### Entities (Keep.Domain/Entities)
 ```csharp
 public class User
 {
@@ -97,7 +97,7 @@ public class NoteCollaborator
 }
 ```
 
-#### DbContext (KeepClone.Infrastructure)
+#### DbContext (Keep.Infrastructure)
 ```csharp
 public class KeepDbContext : DbContext
 {
@@ -122,7 +122,7 @@ dotnet ef migrations add Init
 dotnet ef database update
 ```
 
-### 3. API Controllers (KeepClone.API)
+### 3. API Controllers (Keep.API)
 
 #### NotesController
 ```csharp
@@ -204,7 +204,7 @@ export default function NotesPage() {
 # Khởi tạo repo
 git init
 git add .
-git commit -m "Init KeepClone project"
+git commit -m "Init Keep project"
 
 # Tạo branch feature
 git checkout -b feature/notes-api
@@ -226,4 +226,3 @@ Khi hoàn tất: tạo Pull Request merge vào `main`.
 - Codex có thể làm tuần tự: **Entity → Migration → API → UI → Git**.
 - Chỉ giữ phần cần thiết, tránh dư thừa.
 - Mỗi bước đều rõ ràng, dễ thực hiện.
-
