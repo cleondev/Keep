@@ -54,3 +54,6 @@ TestResult.xml
 nunit-*.xml
 /.vs/Keep
 *.user
+/Keep.API/keep.db
+/Keep.API/keep.db-shm
+/Keep.API/keep.db-wal
