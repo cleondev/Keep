@@ -1,7 +1,6 @@
+using Keep.Application.Users;
 using Keep.Domain.Entities;
-using Keep.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Keep.API.Controllers;
 
@@ -9,32 +8,24 @@ namespace Keep.API.Controllers;
 [Route("api/[controller]")]
 public class UsersController : ControllerBase
 {
-    private readonly KeepDbContext _db;
+    private readonly IUserService _userService;
 
-    public UsersController(KeepDbContext db)
+    public UsersController(IUserService userService)
     {
-        _db = db;
+        _userService = userService;
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<User>>> GetUsers()
+    public async Task<ActionResult<IEnumerable<User>>> GetUsers(CancellationToken cancellationToken)
     {
-        var users = await _db.Users
-            .AsNoTracking()
-            .Include(u => u.Notes)
-            .ToListAsync();
-
+        var users = await _userService.GetAllAsync(cancellationToken);
         return Ok(users);
     }
 
     [HttpGet("{id:guid}")]
-    public async Task<ActionResult<User>> GetUser(Guid id)
+    public async Task<ActionResult<User>> GetUser(Guid id, CancellationToken cancellationToken)
     {
-        var user = await _db.Users
-            .AsNoTracking()
-            .Include(u => u.Notes)
-            .FirstOrDefaultAsync(u => u.Id == id);
-
+        var user = await _userService.GetByIdAsync(id, cancellationToken);
         if (user is null)
         {
             return NotFound();
@@ -44,14 +35,9 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<User>> Create(User user)
+    public async Task<ActionResult<User>> Create(User user, CancellationToken cancellationToken)
     {
-        user.Id = Guid.NewGuid();
-        user.CreatedAt = DateTime.UtcNow;
-
-        _db.Users.Add(user);
-        await _db.SaveChangesAsync();
-
-        return CreatedAtAction(nameof(GetUser), new { id = user.Id }, user);
+        var created = await _userService.CreateAsync(user, cancellationToken);
+        return CreatedAtAction(nameof(GetUser), new { id = created.Id }, created);
     }
 }
